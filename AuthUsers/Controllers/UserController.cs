@@ -22,6 +22,7 @@ namespace AuthUsers.Controllers
         {
             try
             {
+
                 await _userService.AddAsync(model);
 
                 return Ok();

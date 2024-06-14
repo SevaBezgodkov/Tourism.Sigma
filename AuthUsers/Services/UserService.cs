@@ -15,10 +15,11 @@ namespace AuthUsers.Services
         }
         public async Task AddAsync(UserModel model)
         {
-            var ignoreFields = model.IgnoreRabbitFieldsModel;
-            ignoreFields.QueueName = "userQueue";
-            ignoreFields.ReceiverModelType = typeof(User);
-
+            //model.IgnoreRabbitFieldsModel = new RabbitFieldsModel
+            //{
+            //    QueueName = "userQueue"
+            //};
+            model.QueueName = "userQueue";
             _serviceBus.PublishMessage(model, "userExchange", "userQueue", "user.add");
         }
 

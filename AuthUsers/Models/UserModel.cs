@@ -13,7 +13,8 @@ namespace AuthUsers.Models
         public string Password { get; set; } = null!;
         //public int RoleId { get; set; }
 
-        [JsonIgnore]
-        public RabbitFieldsModel IgnoreRabbitFieldsModel { get; set; }
+        public string QueueName { get; set; }
+        public Type ModelType { get; set; }
+        //public RabbitFieldsModel? IgnoreRabbitFieldsModel { get; set; }
     }
 }

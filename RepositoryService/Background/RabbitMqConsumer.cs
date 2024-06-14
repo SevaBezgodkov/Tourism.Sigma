@@ -5,6 +5,7 @@ using RabbitMQ.Client.Events;
 using RepositoryService.Background.Interfaces;
 using RepositoryService.Command;
 using RepositoryService.Command.Interfaces;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -20,7 +21,7 @@ namespace RepositoryService.Background
         private readonly ICommandUserRepository _commandUserRepository;
         private IModel _channel;
 
-        private Dictionary<string, Func<object, Task>> startTask;
+        private Dictionary<string, Func<string, Task>> startTask;
 
         public RabbitMqConsumer(IConfiguration configuration, IBackgroundHandler handler, ICommandUserRepository commandUserRepository)
         {
@@ -47,12 +48,12 @@ namespace RepositoryService.Background
 
         private void InitializeMethods()
         {
-            startTask = new Dictionary<string, Func<object, Task>>()
+            startTask = new Dictionary<string, Func<string, Task>>()
             {
                 {"user.add", async message => 
                     {
-
-                        await _commandUserRepository.AddAsync((User)message);
+                        var userModel = JsonConvert.DeserializeObject<User>(message);
+                        await _commandUserRepository.AddAsync(userModel);
                     }
                 }
             };
@@ -73,19 +74,21 @@ namespace RepositoryService.Background
                 var rabbitFieldsModel = JsonConvert.DeserializeObject<RabbitFieldsModel>(message);
                 queueNameBuilder.Append(rabbitFieldsModel.QueueName);
 
-
+                var dict = JsonConvert.DeserializeObject<Dictionary<string, >>(message);
 
                 if (startTask.Keys.Contains(routingKey))
                 {
-                    var modelType = rabbitFieldsModel.ReceiverModelType;
-
                     await startTask[routingKey](message);
                 }
-            };
 
-            _channel.BasicConsume(queue: queueNameBuilder.ToString(),
+                _channel.BasicConsume(queue: queueNameBuilder.ToString(),
                                   autoAck: true,
                                   consumer: consumer);
+            };
+            //var queueName = queueNameBuilder.ToString();
+            //_channel.BasicConsume(queue: queueNameBuilder.ToString(),
+            //                      autoAck: true,
+            //                      consumer: consumer);
         }
 
         private void InitializeRabbitMqConfiguration()
