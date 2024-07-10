@@ -17,17 +17,13 @@ namespace RepositoryService.Background
     {
         private readonly IConfiguration _configuration;
         private readonly IConnection _connection;
-        private readonly IBackgroundHandler _handler;
-        private readonly ICommandUserRepository _commandUserRepository;
+        private readonly ITasksHandler _handler;
         private IModel _channel;
 
-        private Dictionary<string, Func<string, Task>> startTask;
-
-        public RabbitMqConsumer(IConfiguration configuration, IBackgroundHandler handler, ICommandUserRepository commandUserRepository)
+        public RabbitMqConsumer(IConfiguration configuration, ITasksHandler handler)
         {
             _configuration = configuration;
             _handler = handler;
-            _commandUserRepository = commandUserRepository;
 
             var factory = new ConnectionFactory()
             {
@@ -42,21 +38,6 @@ namespace RepositoryService.Background
             {
                 throw new Exception(ex.Message);
             }
-
-            InitializeMethods();
-        }
-
-        private void InitializeMethods()
-        {
-            startTask = new Dictionary<string, Func<string, Task>>()
-            {
-                {"user.add", async message => 
-                    {
-                        var userModel = JsonConvert.DeserializeObject<User>(message);
-                        await _commandUserRepository.AddAsync(userModel);
-                    }
-                }
-            };
         }
 
         public void ReceiveMessages()
@@ -72,29 +53,27 @@ namespace RepositoryService.Background
                 var routingKey = e.RoutingKey;
 
                 var rabbitFieldsModel = JsonConvert.DeserializeObject<RabbitFieldsModel>(message);
-                queueNameBuilder.Append(rabbitFieldsModel.QueueName);
 
-                var dict = JsonConvert.DeserializeObject<Dictionary<string, >>(message);
+                var queueName = rabbitFieldsModel.QueueName;
 
-                if (startTask.Keys.Contains(routingKey))
-                {
-                    await startTask[routingKey](message);
-                }
+                queueNameBuilder.Append(queueName);
+
+                await _handler.InitializeStartTaskDictionary(routingKey, message);
 
                 _channel.BasicConsume(queue: queueNameBuilder.ToString(),
                                   autoAck: true,
                                   consumer: consumer);
             };
-            //var queueName = queueNameBuilder.ToString();
-            //_channel.BasicConsume(queue: queueNameBuilder.ToString(),
-            //                      autoAck: true,
-            //                      consumer: consumer);
+
+            _channel.BasicConsume(queue: "userQueue",
+                  autoAck: true,
+                  consumer: consumer);
         }
 
         private void InitializeRabbitMqConfiguration()
         {
             AddDirectExchangeWithQueueBinding("userQueue", "userExchange", "user.add");
-            //AddDirectExchangeWithQueueBinding("userTest", "userExchange", "user.test");
+            AddDirectExchangeWithQueueBinding("userQueue", "userExchange", "user.update");
         }
 
         private void AddDirectExchangeWithQueueBinding(string queueName, string exchangeName, string routingKey)

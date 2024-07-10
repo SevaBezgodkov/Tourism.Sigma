@@ -1,3 +1,4 @@
+using AuthUsers.Mapper;
 using AuthUsers.Services;
 using AuthUsers.Services.Interfaces;
 using Domain.Services;
@@ -11,13 +12,17 @@ namespace AuthUsers
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddControllers();
+            var services = builder.Services;
 
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            services.AddControllers();
 
-            builder.Services.AddSingleton<IPublisherServiceBus, PublisherServiceBus>();
-            builder.Services.AddTransient<IUserService, UserService>();
+            services.AddEndpointsApiExplorer();
+            services.AddSwaggerGen();
+
+            services.AddSingleton<IPublisherServiceBus, PublisherServiceBus>();
+            services.AddTransient<IUserService, UserService>();
+
+            services.AddAutoMapper(typeof(AppMappingProfile));
 
             var app = builder.Build();
 

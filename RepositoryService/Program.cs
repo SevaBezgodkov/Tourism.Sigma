@@ -1,10 +1,13 @@
 
+using Domain.Events;
 using Microsoft.EntityFrameworkCore;
 using RabbitMQ.Client;
 using RepositoryService.Background;
 using RepositoryService.Background.Interfaces;
 using RepositoryService.Command;
 using RepositoryService.Command.Interfaces;
+using RepositoryService.Handlers;
+using RepositoryService.Handlers.Interfaces;
 
 namespace RepositoryService
 {
@@ -29,9 +32,12 @@ namespace RepositoryService
             services.AddHostedService<ConsumeRabbitMQHostedService>();
             services.AddSingleton<AppDbContext>();
 
+            services.AddTransient<ITaskHandler<UserAddedEvent>, UserAddedHandler>();
+            services.AddTransient<ITaskHandler<UserUpdatedEvent>, UserUpdatedHandler>();
+
             services.AddTransient<ICommandUserRepository, CommandUserRepository>();
 
-            services.AddSingleton<IBackgroundHandler, BackgroundHandler>();
+            services.AddSingleton<ITasksHandler, TasksHandler>();
             services.AddSingleton<IRabbitMqConsumer, RabbitMqConsumer>();
 
             var app = builder.Build();

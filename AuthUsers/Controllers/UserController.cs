@@ -32,5 +32,21 @@ namespace AuthUsers.Controllers
                 return BadRequest();
             }
         }
+
+        [HttpPost]
+        [Route("/update")]
+        public async Task<IActionResult> UpdateAsync(Guid userId, UserModel model)
+        {
+            try
+            {
+                await _userService.UpdateByIdAsync(userId, model);
+
+                return Ok();
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
     }
 }
