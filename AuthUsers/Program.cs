@@ -10,6 +10,7 @@ namespace AuthUsers
     {
         public static void Main(string[] args)
         {
+            //test
             var builder = WebApplication.CreateBuilder(args);
 
             var services = builder.Services;
